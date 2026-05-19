@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaSense AI - IT Support</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="theme.js"></script>
+    <script src="nav.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .support-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 600px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .form-group label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .form-control {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-glass);
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 15px;
+            transition: border-color 0.2s;
+        }
+        [data-theme="light"] .form-control { background: #fff; }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+        .success-state {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            color: var(--status-normal);
+        }
+        .success-state h3 { margin-top: 16px; margin-bottom: 8px; color: var(--text-primary); }
+        .success-state p { color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i data-lucide="droplet" class="brand-icon"></i>
+                <h1>AquaSense <span class="accent">AI</span></h1>
+            </div>
+            <nav><!-- injected by nav.js --></nav>
+            <div class="system-status">
+                <div class="status-indicator pulse-green"></div>
+                <span>System Online</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-titles">
+                    <h2>IT Support Center</h2>
+                    <p>Submit a ticket for technical assistance</p>
+                </div>
+                <div class="header-actions">
+                    <div class="user-profile"></div>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <div class="glass-panel" style="padding: 30px;">
+                    
+                    <div id="ticket-success" class="success-state">
+                        <i data-lucide="check-circle" style="width: 48px; height: 48px; margin: 0 auto;"></i>
+                        <h3>Ticket Submitted Successfully</h3>
+                        <p>Your request has been routed to the IT helpdesk. Ticket ID: <span id="ticket-id" style="font-family: monospace; color: var(--text-primary);"></span></p>
+                        <button class="btn btn-outline" style="margin-top: 20px;" onclick="resetForm()">Submit Another Ticket</button>
+                    </div>
+
+                    <form id="support-form" class="support-form">
+                        <div class="section-title" style="margin-bottom: 10px;">
+                            <h3>New Support Ticket</h3>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="ticket-category">Category</label>
+                            <select id="ticket-category" class="form-control" required>
+                                <option value="">Select a category...</option>
+                                <option value="sensor">Sensor Telemetry Failure</option>
+                                <option value="software">Platform Bug / Glitch</option>
+                                <option value="export">Data Export Issue</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ticket-priority">Priority</label>
+                            <select id="ticket-priority" class="form-control" required>
+                                <option value="low">Low (Routine)</option>
+                                <option value="medium">Medium (Standard)</option>
+                                <option value="high">High (Urgent)</option>
+                                <option value="critical">Critical (System Down)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ticket-desc">Description of Issue</label>
+                            <textarea id="ticket-desc" class="form-control" placeholder="Please provide detailed information about the issue..." required></textarea>
+                        </div>
+
+                        <button type="submit" class="btn">Submit Ticket</button>
+                    </form>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        document.getElementById('support-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = 'TK-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            document.getElementById('ticket-id').innerText = id;
+            document.getElementById('support-form').style.display = 'none';
+            document.getElementById('ticket-success').style.display = 'block';
+        });
+
+        function resetForm() {
+            document.getElementById('support-form').reset();
+            document.getElementById('ticket-success').style.display = 'none';
+            document.getElementById('support-form').style.display = 'flex';
+        }
+    </script>
+<script src="agent.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaSense AI - Analytics History</title>
+    <meta name="description" content="Historical wastewater compliance monitoring and static data analysis.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- CSS & Chart.js & Plugins -->
+    <link rel="stylesheet" href="style.css">
+    <script src="theme.js"></script>
+    <script src="nav.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i data-lucide="droplet" class="brand-icon"></i>
+                <h1>AquaSense <span class="accent">AI</span></h1>
+            </div>
+            <nav><!-- injected by nav.js --></nav>
+            <div class="system-status">
+                <div class="status-indicator pulse-green"></div>
+                <span>System Online</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-titles">
+                    <h2>Analytics History</h2>
+                    <p>Historical Trend Analysis & Breach Logs</p>
+                </div>
+                <div class="header-actions">
+                    <select id="region-filter" class="input-glass">
+                        <option value="global">Global View</option>
+                        <option value="na">North America</option>
+                        <option value="sa">South America</option>
+                        <option value="eu">Europe</option>
+                        <option value="af">Africa</option>
+                        <option value="as">Asia</option>
+                        <option value="oc">Oceania</option>
+                    </select>
+                    
+                    <input type="date" id="date-filter" class="input-glass">
+                    
+                    <button class="btn btn-primary" id="btn-export-report"><i data-lucide="download"></i> Export Data</button>
+
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="User Avatar">
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <!-- Today's Averages Overview -->
+                <div class="section-title">
+                    <h3 style="margin-bottom: -10px;">Selected Day Averages</h3>
+                </div>
+                <div class="metrics-row">
+                    <!-- Cards will be populated by JS -->
+                    <div class="metric-card glass-panel" id="card-avg-ph">
+                        <div class="metric-header">
+                            <span class="metric-title">Avg pH</span>
+                            <i data-lucide="activity" class="icon"></i>
+                        </div>
+                        <div class="metric-body">
+                            <h3 class="metric-value" id="val-avg-ph">--</h3>
+                        </div>
+                    </div>
+                    <div class="metric-card glass-panel" id="card-avg-cod">
+                        <div class="metric-header">
+                            <span class="metric-title">Avg COD</span>
+                            <i data-lucide="flask-conical" class="icon"></i>
+                        </div>
+                        <div class="metric-body">
+                            <h3 class="metric-value" id="val-avg-cod">--</h3>
+                        </div>
+                    </div>
+                    <div class="metric-card glass-panel" id="card-avg-bod">
+                        <div class="metric-header">
+                            <span class="metric-title">Avg BOD</span>
+                            <i data-lucide="droplets" class="icon"></i>
+                        </div>
+                        <div class="metric-body">
+                            <h3 class="metric-value" id="val-avg-bod">--</h3>
+                        </div>
+                    </div>
+                    <div class="metric-card glass-panel" id="card-avg-tss">
+                        <div class="metric-header">
+                            <span class="metric-title">Avg TSS</span>
+                            <i data-lucide="filter" class="icon"></i>
+                        </div>
+                        <div class="metric-body">
+                            <h3 class="metric-value" id="val-avg-tss">--</h3>
+                        </div>
+                    </div>
+                    <div class="metric-card glass-panel" id="card-avg-temp">
+                        <div class="metric-header">
+                            <span class="metric-title">Avg Temp</span>
+                            <i data-lucide="thermometer" class="icon"></i>
+                        </div>
+                        <div class="metric-body">
+                            <h3 class="metric-value" id="val-avg-temp">--</h3>
+                        </div>
+                    </div>
+                    <div class="metric-card glass-panel" id="card-avg-toxic">
+                        <div class="metric-header">
+                            <span class="metric-title">Avg Toxic</span>
+                            <i data-lucide="biohazard" class="icon"></i>
+                        </div>
+                        <div class="metric-body">
+                            <h3 class="metric-value" id="val-avg-toxic">--</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Trend Summary -->
+                <div class="alerts-container glass-panel ai-summary-box" style="margin-bottom: 20px;">
+                    <div class="alerts-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3><i data-lucide="sparkles" style="width:16px;height:16px;vertical-align:middle;color:#8b5cf6;"></i> AI Trend Summary</h3>
+                        <button class="btn btn-outline" id="btn-generate-ai" style="padding: 4px 12px; font-size: 12px;"><i data-lucide="cpu"></i> Generate Summary</button>
+                    </div>
+                    <div id="ai-summary-content" style="padding: 16px; font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+                        Click 'Generate Summary' to interpret the selected day's data using the local Ollama LLM.
+                    </div>
+                </div>
+
+                <!-- Historical Charts Layout -->
+                <div class="historical-charts-row">
+                    <div class="chart-box glass-panel" id="box-weekly">
+                        <div class="chart-header">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <h3>7-Day Trend</h3>
+                                <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(139,92,246,0.15);color:#8b5cf6;font-weight:600;letter-spacing:0.5px;">+ FORECAST</span>
+                            </div>
+                            <button class="btn-icon btn-fullscreen" onclick="toggleFullscreen('box-weekly')"><i data-lucide="maximize"></i></button>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chartWeekly"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-box glass-panel" id="box-monthly">
+                        <div class="chart-header">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <h3>30-Day Trend</h3>
+                                <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(139,92,246,0.15);color:#8b5cf6;font-weight:600;letter-spacing:0.5px;">+ FORECAST</span>
+                            </div>
+                            <button class="btn-icon btn-fullscreen" onclick="toggleFullscreen('box-monthly')"><i data-lucide="maximize"></i></button>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chartMonthly"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-box glass-panel" id="box-yearly">
+                        <div class="chart-header">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <h3>12-Month Trend</h3>
+                                <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(139,92,246,0.15);color:#8b5cf6;font-weight:600;letter-spacing:0.5px;">+ FORECAST</span>
+                            </div>
+                            <button class="btn-icon btn-fullscreen" onclick="toggleFullscreen('box-yearly')"><i data-lucide="maximize"></i></button>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chartYearly"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Near-Breach Warning History -->
+                <div class="alerts-container glass-panel" style="margin-top:16px;">
+                    <div class="alerts-header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <h3 style="display:flex;align-items:center;gap:8px;">
+                            <i data-lucide="triangle-alert" style="width:16px;height:16px;color:var(--status-warning);"></i>
+                            Near-Breach Warning History
+                        </h3>
+                        <span style="font-size:12px;color:var(--text-secondary);">Live from Dashboard · &gt;80% Threshold · Section 82</span>
+                    </div>
+                    <div class="alerts-feed" id="near-breach-log" style="max-height:400px;">
+                        <div class="empty-state" style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">
+                            No near-breach warnings recorded yet. Navigate to the Dashboard to begin live monitoring — warnings appear here automatically when sensor readings exceed 80% of their Section 82 limits.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Breach Logs -->
+                <div class="alerts-container glass-panel breach-history-box" style="margin-top: 10px;">
+                    <div class="alerts-header">
+                        <h3>Historical Breach Logs</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <span class="badge" id="breach-count-day">0 Today</span>
+                            <span class="badge" id="breach-count-week">0 This Week</span>
+                            <span class="badge" id="breach-count-month">0 This Month</span>
+                        </div>
+                    </div>
+                    <div class="alerts-feed" id="history-breach-feed" style="max-height: 400px;">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Chart Fullscreen Modal -->
+    <div class="modal-overlay" id="chart-modal" style="display: none;">
+        <div class="modal-content glass-panel" style="width: 80vw; height: 80vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3 id="chart-modal-title">Chart View</h3>
+                <button class="btn-icon" onclick="toggleFullscreen()"><i data-lucide="minimize"></i></button>
+            </div>
+            <div class="modal-body" style="flex: 1; position: relative; padding: 20px;">
+                <canvas id="modalChartCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <script src="analytics.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+<script src="agent.js" defer></script>
+</body>
+</html>

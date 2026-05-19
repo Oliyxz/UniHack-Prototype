@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaSense AI - Compliance Reports</title>
+    <meta name="description" content="Generated compliance reports and breach logs for download.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="theme.js"></script>
+    <script src="nav.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .reports-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .report-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-glass);
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
+        }
+        .report-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .report-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .report-info h4 { margin: 0; color: var(--text-primary); font-size: 16px; }
+        .report-meta { font-size: 13px; color: var(--text-secondary); display: flex; gap: 16px; }
+        .report-meta span { display: flex; align-items: center; gap: 4px; }
+        .report-badge {
+            padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase;
+        }
+        .report-badge.general { background: rgba(0, 210, 255, 0.1); color: var(--accent-blue); }
+        .report-badge.breach { background: rgba(239, 68, 68, 0.1); color: var(--status-critical); }
+        .report-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .report-empty {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px dashed var(--border-glass);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i data-lucide="droplet" class="brand-icon"></i>
+                <h1>AquaSense <span class="accent">AI</span></h1>
+            </div>
+            <nav>
+            <nav><!-- injected by nav.js --></nav>
+            <div class="system-status">
+                <div class="status-indicator pulse-green"></div>
+                <span>System Online</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-titles">
+                    <h2>Document Archive</h2>
+                    <p>Auto-generated Compliance & Breach Reports</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-outline" id="btn-clear-reports"><i data-lucide="trash-2"></i> Clear History</button>
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="User Avatar">
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <div class="glass-panel" style="padding: 24px;">
+                    <div class="section-title" style="margin-bottom: 20px;">
+                        <h3>Available Reports</h3>
+                    </div>
+                    
+                    <div class="reports-container" id="reports-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="reports.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+<script src="agent.js" defer></script>
+</body>
+</html>

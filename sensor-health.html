@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaSense AI - Sensor Health Diagnostics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="theme.js"></script>
+    <script src="nav.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .sensor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; padding: 24px; }
+        .sensor-card { border-radius: 12px; padding: 20px; border: 1px solid var(--border-glass); background: var(--bg-panel); transition: 0.3s; position: relative; overflow: hidden; }
+        .sensor-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .sensor-card.healthy::before { background: var(--status-normal); }
+        .sensor-card.warning::before { background: var(--status-warning); }
+        .sensor-card.critical::before { background: var(--status-critical); }
+        .sensor-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+        .sensor-name { font-weight: 600; font-size: 15px; color: var(--text-primary); }
+        .sensor-location { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+        .sensor-status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-healthy { background: rgba(16,185,129,0.15); color: var(--status-normal); }
+        .badge-warning { background: rgba(245,158,11,0.15); color: var(--status-warning); }
+        .badge-critical { background: rgba(239,68,68,0.15); color: var(--status-critical); }
+        .sensor-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .sensor-metric-item { background: rgba(0,0,0,0.15); border-radius: 8px; padding: 10px; }
+        .sensor-metric-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+        .sensor-metric-value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+        .sensor-signal { margin-top: 14px; }
+        .signal-bar-track { height: 6px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .signal-bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+        .sensor-alert-msg { margin-top: 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; display: none; }
+        .sensor-alert-msg.show { display: block; }
+        .sensor-alert-msg.warning { background: rgba(245,158,11,0.1); color: var(--status-warning); border-left: 3px solid var(--status-warning); }
+        .sensor-alert-msg.critical { background: rgba(239,68,68,0.1); color: var(--status-critical); border-left: 3px solid var(--status-critical); }
+        .health-summary-bar { display: flex; gap: 16px; padding: 18px 24px; flex-wrap: wrap; }
+        .health-stat { background: var(--bg-panel); border: 1px solid var(--border-glass); border-radius: 10px; padding: 14px 20px; display: flex; align-items: center; gap: 14px; }
+        .health-stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .health-stat-text h4 { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+        .health-stat-text p { font-size: 12px; color: var(--text-secondary); }
+        .recalibrate-btn { margin-top: 12px; width: 100%; padding: 8px; border: 1px solid var(--border-glass); border-radius: 8px; background: transparent; color: var(--text-secondary); font-family: inherit; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .recalibrate-btn:hover { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="brand"><i data-lucide="droplet" class="brand-icon"></i><h1>AquaSense <span class="accent">AI</span></h1></div>
+        <nav><!-- injected by nav.js --></nav>
+        <div class="system-status"><div class="status-indicator pulse-green"></div><span>System Online</span></div>
+    </aside>
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-titles">
+                <h2>Sensor Health Diagnostics</h2>
+                <p>AI-powered hardware integrity analysis & drift detection</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="runDiagnostics()"><i data-lucide="refresh-cw"></i> Run Full Scan</button>
+                <div class="user-profile"></div>
+            </div>
+        </header>
+
+        <div id="health-summary-bar" class="health-summary-bar"></div>
+        <div id="sensor-grid" class="sensor-grid"></div>
+    </main>
+</div>
+<script>
+const SENSORS = [
+    { id: 's1',  name: 'EUR-1 SUB-A · pH-001',     location: 'EURO-MAIN / Main Discharge Pipe',       param: 'ph',    station: 'EUR-1', driftRisk: 0.05 },
+    { id: 's2',  name: 'EUR-1 SUB-B · COD-002',    location: 'EURO-MAIN / Effluent Channel Secondary', param: 'cod',   station: 'EUR-1', driftRisk: 0.12 },
+    { id: 's3',  name: 'EUR-1 SUB-C · BOD-003',    location: 'EURO-MAIN / Treatment Tank Inlet',       param: 'bod',   station: 'EUR-1', driftRisk: 0.65 },
+    { id: 's4',  name: 'APC-1 SUB-A · TSS-004',    location: 'APAC-MAIN / Secondary Clarifier',        param: 'tss',   station: 'APC-1', driftRisk: 0.25 },
+    { id: 's5',  name: 'AFR-1 SUB-A · TMP-005',    location: 'AFRC-MAIN / Cooling Tower Outlet',       param: 'temp',  station: 'AFR-1', driftRisk: 0.08 },
+    { id: 's6',  name: 'EUR-1 MAIN · TOX-006',     location: 'EURO-MAIN / Primary Discharge Gate',     param: 'toxic', station: 'EUR-1', driftRisk: 0.88 },
+    { id: 's7',  name: 'AMS-1 SUB-A · pH-007',     location: 'AMRS-MAIN / Bioreactor Feed Line',       param: 'ph',    station: 'AMS-1', driftRisk: 0.30 },
+    { id: 's8',  name: 'PCF-1 SUB-A · COD-008',    location: 'PCFC-MAIN / Storm Overflow Drain',       param: 'cod',   station: 'PCF-1', driftRisk: 0.15 },
+    { id: 's9',  name: 'APC-1 SUB-B · BOD-009',    location: 'APAC-MAIN / Process Vat B Outlet',       param: 'bod',   station: 'APC-1', driftRisk: 0.02 },
+    { id: 's10', name: 'AFR-1 SUB-B · TSS-010',    location: 'AFRC-MAIN / Holding Tank 4',             param: 'tss',   station: 'AFR-1', driftRisk: 0.47 },
+    { id: 's11', name: 'AMN-1 SUB-A · TMP-011',    location: 'AMRN-MAIN / Aeration Basin',             param: 'temp',  station: 'AMN-1', driftRisk: 0.04 },
+    { id: 's12', name: 'APC-1 MAIN · TOX-012',     location: 'APAC-MAIN / Sump Pit Exit Gate',         param: 'toxic', station: 'APC-1', driftRisk: 0.71 },
+];
+
+const DRIFT_MSGS = {
+    high: [
+        'Sensor is exhibiting unnatural flatline drift patterns. Biofilm accumulation suspected. Schedule immediate recalibration.',
+        'Variance coefficient below expected threshold. Possible membrane fouling detected. Manual inspection required.',
+        'Signal-to-noise ratio degraded by 62%. Corrosion of reference electrode likely. Replace sensor within 48 hrs.',
+    ],
+    medium: [
+        'Minor drift detected in baseline. Schedule routine recalibration within 7 days.',
+        'Calibration offset trending +0.8%. Preventive maintenance recommended at next scheduled window.',
+    ]
+};
+
+let sensorData = [];
+
+function generateSensorReadings() {
+    return SENSORS.map(s => {
+        const rand = Math.random();
+        let status = 'healthy';
+        if (s.driftRisk > 0.6) status = 'critical';
+        else if (s.driftRisk > 0.2) status = 'warning';
+
+        const uptime = (99.9 - s.driftRisk * 15).toFixed(1);
+        const signalStrength = Math.round(100 - s.driftRisk * 50 + rand * 5);
+        const calibrationAge = Math.round(s.driftRisk * 180 + 10);
+        const driftIndex = (s.driftRisk * 4.2 + rand * 0.5).toFixed(2);
+
+        let alertMsg = '';
+        if (status === 'critical') alertMsg = DRIFT_MSGS.high[Math.floor(rand * DRIFT_MSGS.high.length)];
+        else if (status === 'warning') alertMsg = DRIFT_MSGS.medium[Math.floor(rand * DRIFT_MSGS.medium.length)];
+
+        return { ...s, status, uptime, signalStrength, calibrationAge, driftIndex, alertMsg };
+    });
+}
+
+function renderSummary(data) {
+    const healthy = data.filter(s => s.status === 'healthy').length;
+    const warning = data.filter(s => s.status === 'warning').length;
+    const critical = data.filter(s => s.status === 'critical').length;
+    document.getElementById('health-summary-bar').innerHTML = `
+        <div class="health-stat">
+            <div class="health-stat-icon" style="background:rgba(16,185,129,0.1)"><i data-lucide="check-circle" style="color:var(--status-normal)"></i></div>
+            <div class="health-stat-text"><h4>${healthy}</h4><p>Healthy Sensors</p></div>
+        </div>
+        <div class="health-stat">
+            <div class="health-stat-icon" style="background:rgba(245,158,11,0.1)"><i data-lucide="alert-triangle" style="color:var(--status-warning)"></i></div>
+            <div class="health-stat-text"><h4>${warning}</h4><p>Need Attention</p></div>
+        </div>
+        <div class="health-stat">
+            <div class="health-stat-icon" style="background:rgba(239,68,68,0.1)"><i data-lucide="alert-octagon" style="color:var(--status-critical)"></i></div>
+            <div class="health-stat-text"><h4>${critical}</h4><p>Critical / Drifting</p></div>
+        </div>
+        <div class="health-stat">
+            <div class="health-stat-icon" style="background:rgba(0,210,255,0.1)"><i data-lucide="cpu" style="color:var(--accent-blue)"></i></div>
+            <div class="health-stat-text"><h4>${data.length}</h4><p>Total Sensors Online</p></div>
+        </div>
+    `;
+}
+
+function renderGrid(data) {
+    const grid = document.getElementById('sensor-grid');
+    const signalColor = (s) => s > 70 ? 'var(--status-normal)' : s > 40 ? 'var(--status-warning)' : 'var(--status-critical)';
+    grid.innerHTML = data.map(s => `
+        <div class="sensor-card ${s.status}">
+            <div class="sensor-top">
+                <div>
+                    <div class="sensor-name">${s.name}</div>
+                    <div class="sensor-location"><i data-lucide="map-pin" style="width:11px;height:11px;vertical-align:middle;"></i> ${s.location} &bull; <span style="font-family:monospace;font-size:11px;">${s.station}</span></div>
+                </div>
+                <span class="sensor-status-badge badge-${s.status}">${s.status.charAt(0).toUpperCase()+s.status.slice(1)}</span>
+            </div>
+            <div class="sensor-metrics">
+                <div class="sensor-metric-item">
+                    <div class="sensor-metric-label">Uptime</div>
+                    <div class="sensor-metric-value">${s.uptime}%</div>
+                </div>
+                <div class="sensor-metric-item">
+                    <div class="sensor-metric-label">Drift Index</div>
+                    <div class="sensor-metric-value">${s.driftIndex}</div>
+                </div>
+                <div class="sensor-metric-item">
+                    <div class="sensor-metric-label">Cal. Age (days)</div>
+                    <div class="sensor-metric-value">${s.calibrationAge}</div>
+                </div>
+                <div class="sensor-metric-item">
+                    <div class="sensor-metric-label">Parameter</div>
+                    <div class="sensor-metric-value" style="font-size:14px;text-transform:uppercase;">${s.param.toUpperCase()}</div>
+                </div>
+            </div>
+            <div class="sensor-signal">
+                <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);">
+                    <span>Signal Strength</span><span style="color:${signalColor(s.signalStrength)}">${s.signalStrength}%</span>
+                </div>
+                <div class="signal-bar-track">
+                    <div class="signal-bar-fill" style="width:${s.signalStrength}%;background:${signalColor(s.signalStrength)};"></div>
+                </div>
+            </div>
+            <div class="sensor-alert-msg ${s.status !== 'healthy' ? s.status + ' show' : ''}">${s.alertMsg}</div>
+            <button class="recalibrate-btn" onclick="recalibrate('${s.id}', this)"><i data-lucide="refresh-cw" style="width:13px;height:13px;vertical-align:middle;margin-right:5px;"></i> Schedule Recalibration</button>
+        </div>
+    `).join('');
+    lucide.createIcons();
+}
+
+function recalibrate(id, btn) {
+    btn.innerText = '✓ Recalibration Scheduled';
+    btn.style.background = 'rgba(16,185,129,0.2)';
+    btn.style.color = 'var(--status-normal)';
+    btn.disabled = true;
+}
+
+function runDiagnostics() {
+    sensorData = generateSensorReadings();
+    renderSummary(sensorData);
+    renderGrid(sensorData);
+}
+
+runDiagnostics();
+</script>
+<script src="agent.js" defer></script>
+</body>
+</html>

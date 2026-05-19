@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaSense AI - Tamper-Evident Audit Log</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="theme.js"></script>
+    <script src="nav.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .audit-container { padding: 24px; }
+        .chain-banner { background: linear-gradient(135deg, rgba(0,210,255,0.08), rgba(139,92,246,0.08)); border: 1px solid rgba(0,210,255,0.2); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; }
+        .chain-banner-icon { width: 44px; height: 44px; border-radius: 10px; background: rgba(0,210,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .chain-banner h4 { color: var(--text-primary); font-size: 15px; margin-bottom: 3px; }
+        .chain-banner p { color: var(--text-secondary); font-size: 13px; }
+        .chain-integrity { margin-left: auto; padding: 8px 16px; border-radius: 8px; background: rgba(16,185,129,0.1); color: var(--status-normal); font-weight: 600; font-size: 14px; white-space: nowrap; }
+        .audit-table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead th { background: rgba(0,0,0,0.2); color: var(--text-secondary); font-weight: 500; padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border-glass); white-space: nowrap; }
+        tbody tr { border-bottom: 1px solid var(--border-glass); transition: background 0.15s; }
+        tbody tr:hover { background: rgba(255,255,255,0.03); }
+        td { padding: 12px 14px; color: var(--text-primary); vertical-align: middle; }
+        .hash-cell { font-family: monospace; font-size: 12px; color: var(--text-secondary); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .verify-btn { padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border-glass); background: transparent; color: var(--accent-blue); font-size: 12px; font-family: inherit; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .verify-btn:hover { background: var(--accent-blue); color: #000; }
+        .verify-btn.verified { background: rgba(16,185,129,0.1); color: var(--status-normal); border-color: var(--status-normal); cursor: default; }
+        .type-badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .type-telemetry { background: rgba(0,210,255,0.1); color: var(--accent-blue); }
+        .type-breach { background: rgba(239,68,68,0.1); color: var(--status-critical); }
+        .type-report { background: rgba(139,92,246,0.1); color: var(--accent-purple); }
+        .type-calibration { background: rgba(245,158,11,0.1); color: var(--status-warning); }
+        .chain-link-indicator { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--status-normal); }
+        .stats-bar { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+        .stat-pill { background: var(--bg-panel); border: 1px solid var(--border-glass); border-radius: 10px; padding: 12px 18px; }
+        .stat-pill h4 { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+        .stat-pill p { font-size: 12px; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="brand"><i data-lucide="droplet" class="brand-icon"></i><h1>AquaSense <span class="accent">AI</span></h1></div>
+        <nav>
+        <nav><!-- injected by nav.js --></nav>
+        <div class="system-status"><div class="status-indicator pulse-green"></div><span>System Online</span></div>
+    </aside>
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-titles">
+                <h2>Tamper-Evident Audit Log</h2>
+                <p>Zero-Trust Regulatory Compliance — SHA-256 Block Ledger</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="addNewBlock()"><i data-lucide="plus-circle"></i> Seal New Block</button>
+                <button class="btn btn-primary" onclick="verifyChain()"><i data-lucide="shield-check"></i> Verify Full Chain</button>
+                <div class="user-profile"><img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="Avatar"></div>
+            </div>
+        </header>
+
+        <div class="audit-container">
+            <div class="chain-banner">
+                <div class="chain-banner-icon"><i data-lucide="link" style="color:var(--accent-blue)"></i></div>
+                <div>
+                    <h4>Simulated SHA-256 Blockchain Ledger</h4>
+                    <p>Each hourly block contains a cryptographic hash of telemetry data, chained to the previous block. Any tampering is instantly detectable.</p>
+                </div>
+                <div class="chain-integrity" id="chain-integrity-status">✓ Chain Intact &bull; 0 Tampering Detected</div>
+            </div>
+
+            <div class="stats-bar" id="stats-bar"></div>
+
+            <div class="glass-panel" style="padding: 0; overflow: hidden;">
+                <div class="audit-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Block #</th>
+                                <th>Timestamp</th>
+                                <th>Type</th>
+                                <th>Region</th>
+                                <th>Data Summary</th>
+                                <th>SHA-256 Hash</th>
+                                <th>Prev Hash</th>
+                                <th>Chain Link</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+// Simulate SHA-256 with a deterministic pseudo-hash for the prototype
+function pseudoHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    const hex = Math.abs(hash).toString(16).padStart(8, '0');
+    const extra = Math.abs(hash * 0x9e3779b9).toString(16).padStart(8, '0');
+    return (hex + extra + hex.split('').reverse().join('') + extra.split('').reverse().join('')).substring(0, 64);
+}
+
+const TYPES = ['telemetry', 'telemetry', 'telemetry', 'breach', 'report', 'calibration'];
+const REGIONS = ['North America', 'Europe', 'Asia', 'Africa', 'South America', 'Oceania'];
+const DATA_SUMMARIES = [
+    'pH:7.2, COD:112, BOD:24, TSS:15, Temp:22°C, Toxic:1.1 — All nominal',
+    'pH:8.9, COD:148, BOD:47 — BREACH DETECTED. Discharge valve A diverted.',
+    'Sensor recalibration completed. BOD Probe Unit 3 offset corrected.',
+    'pH:7.1, COD:105, BOD:21, TSS:13, Temp:24°C, Toxic:0.9 — Nominal',
+    'General Compliance Report generated. 0 active breaches.',
+    'pH:6.1, COD:90, BOD:19, TSS:11, Temp:28°C, Toxic:0.5 — Nominal',
+];
+
+let blocks = [];
+let blockCounter = 1;
+
+function generateBlock(prevHash) {
+    const type = TYPES[Math.floor(Math.random() * TYPES.length)];
+    const region = REGIONS[Math.floor(Math.random() * REGIONS.length)];
+    const summary = DATA_SUMMARIES[Math.floor(Math.random() * DATA_SUMMARIES.length)];
+    const now = new Date();
+    now.setHours(now.getHours() - (30 - blockCounter));
+    const timestamp = now.toLocaleString();
+    const content = `${blockCounter}|${timestamp}|${type}|${region}|${summary}|${prevHash}`;
+    const hash = pseudoHash(content);
+    return { block: blockCounter++, timestamp, type, region, summary, hash, prevHash, verified: false };
+}
+
+function initChain() {
+    const genesisHash = pseudoHash('GENESIS_BLOCK_AQUASENSE_AI_2025');
+    blocks = [];
+    blockCounter = 1;
+    let prev = genesisHash;
+    for (let i = 0; i < 20; i++) {
+        const b = generateBlock(prev);
+        prev = b.hash;
+        blocks.unshift(b);
+    }
+    renderTable();
+    renderStats();
+}
+
+function renderStats() {
+    const bar = document.getElementById('stats-bar');
+    const byType = {};
+    blocks.forEach(b => { byType[b.type] = (byType[b.type] || 0) + 1; });
+    bar.innerHTML = `
+        <div class="stat-pill"><h4>${blocks.length}</h4><p>Total Blocks Sealed</p></div>
+        <div class="stat-pill"><h4>${byType.telemetry || 0}</h4><p>Telemetry Blocks</p></div>
+        <div class="stat-pill"><h4>${byType.breach || 0}</h4><p>Breach Records</p></div>
+        <div class="stat-pill"><h4>${byType.report || 0}</h4><p>Report Snapshots</p></div>
+    `;
+}
+
+function renderTable() {
+    const tbody = document.getElementById('audit-tbody');
+    tbody.innerHTML = blocks.map((b, idx) => `
+        <tr>
+            <td><strong>#${b.block}</strong></td>
+            <td style="white-space:nowrap">${b.timestamp}</td>
+            <td><span class="type-badge type-${b.type}">${b.type.charAt(0).toUpperCase()+b.type.slice(1)}</span></td>
+            <td>${b.region}</td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${b.summary}">${b.summary}</td>
+            <td class="hash-cell" title="${b.hash}">${b.hash.substring(0,12)}…</td>
+            <td class="hash-cell" title="${b.prevHash}">${b.prevHash.substring(0,12)}…</td>
+            <td><span class="chain-link-indicator"><i data-lucide="check-circle" style="width:13px;height:13px;"></i> Linked</span></td>
+            <td><button class="verify-btn ${b.verified ? 'verified' : ''}" onclick="verifySingle(${idx}, this)">${b.verified ? '✓ Verified' : 'Verify'}</button></td>
+        </tr>
+    `).join('');
+    lucide.createIcons();
+}
+
+function verifySingle(idx, btn) {
+    blocks[idx].verified = true;
+    btn.textContent = '✓ Verified';
+    btn.classList.add('verified');
+}
+
+function verifyChain() {
+    blocks.forEach(b => b.verified = true);
+    renderTable();
+    document.getElementById('chain-integrity-status').innerHTML = '✓ Full Chain Verified &bull; 0 Tampering';
+    document.getElementById('chain-integrity-status').style.background = 'rgba(16,185,129,0.15)';
+    document.getElementById('chain-integrity-status').style.color = 'var(--status-normal)';
+}
+
+function addNewBlock() {
+    const prev = blocks.length > 0 ? blocks[0].hash : pseudoHash('GENESIS');
+    blockCounter = blocks[0] ? blocks[0].block + 1 : 1;
+    const b = generateBlock(prev);
+    blocks.unshift(b);
+    renderTable();
+    renderStats();
+}
+
+initChain();
+</script>
+<script src="agent.js" defer></script>
+</body>
+</html>
