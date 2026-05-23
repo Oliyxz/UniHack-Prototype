@@ -34,19 +34,72 @@ const REGION_TEMP_BASES = {
     'oc': 23
 };
 
-// Helper: Generate Random Walk Data
-const generateMockData = (points, baseConfig, key = '') => {
+// Helper: Generate or Get Permanent History
+const getSliceOffset = () => {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const selected = new Date(dateFilter.value);
+    selected.setHours(0,0,0,0);
+    const diffTime = today.getTime() - selected.getTime();
+    let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+};
+
+const getPermanentStore = () => {
+    const STORE_KEY = 'aquaAnalyticsPermanentStore';
+    let store = localStorage.getItem(STORE_KEY);
+    if (store) return JSON.parse(store);
+    
+    store = {};
+    const days = 3650;
+    
+    Object.keys(REGIONS).forEach(region => {
+        store[region] = {};
+        Object.keys(CONFIG).forEach(key => {
+            let data = [];
+            let baseVal = CONFIG[key].base;
+            if (key === 'temp') baseVal = REGION_TEMP_BASES[region] || 22.5;
+            let current = baseVal;
+            for (let i = 0; i < days; i++) {
+                current += (Math.random() - 0.5) * CONFIG[key].noise;
+                if (current < 0) current = 0;
+                data.push(parseFloat(current.toFixed(2)));
+            }
+            store[region][key] = data;
+        });
+    });
+    localStorage.setItem(STORE_KEY, JSON.stringify(store));
+    return store;
+};
+
+const generateMockData = (points, baseConfig, key = '', intervalType = 'day') => {
+    const store = getPermanentStore();
+    const region = regionFilter.value || 'global';
+    const fullHistory = store[region][key];
+    
+    const diffDays = getSliceOffset();
+    const endIndex = fullHistory.length - 1 - diffDays;
+    
     let data = [];
-    let baseVal = baseConfig.base;
-    if (key === 'temp') {
-        const region = regionFilter.value || 'global';
-        baseVal = REGION_TEMP_BASES[region] || 22.5;
-    }
-    let current = baseVal;
-    for (let i = 0; i < points; i++) {
-        current += (Math.random() - 0.5) * baseConfig.noise;
-        if (current < 0) current = 0;
-        data.push(current);
+    if (intervalType === 'day') {
+        let start = Math.max(0, endIndex - points + 1);
+        data = fullHistory.slice(start, endIndex + 1);
+    } else if (intervalType === 'week') {
+        for (let i = points - 1; i >= 0; i--) {
+            let start = Math.max(0, endIndex - (i * 7) - 6);
+            let end = endIndex - (i * 7);
+            const slice = fullHistory.slice(start, end + 1);
+            const avg = slice.reduce((a,b)=>a+b,0) / Math.max(slice.length, 1);
+            data.push(parseFloat(avg.toFixed(2)));
+        }
+    } else if (intervalType === 'month') {
+        for (let i = points - 1; i >= 0; i--) {
+            let start = Math.max(0, endIndex - (i * 30) - 29);
+            let end = endIndex - (i * 30);
+            const slice = fullHistory.slice(start, end + 1);
+            const avg = slice.reduce((a,b)=>a+b,0) / Math.max(slice.length, 1);
+            data.push(parseFloat(avg.toFixed(2)));
+        }
     }
     return data;
 };
@@ -127,9 +180,9 @@ function buildProjection(data) {
     });
 }
 
-const getDatasets = (points) => {
+const getDatasets = (points, intervalType) => {
     return Object.keys(CONFIG).map(k => {
-        const hist = generateMockData(points, CONFIG[k], k);
+        const hist = generateMockData(points, CONFIG[k], k, intervalType);
         const proj = buildProjection(hist);
         // Observed series
         const observed = {
@@ -181,70 +234,87 @@ const initCharts = () => {
     });
 };
 
-// Generate Mock Breaches
+// Generate Mock Breaches (Persistent)
 const generateBreaches = () => {
     breachFeed.innerHTML = '';
     const region = regionFilter.value;
     const regionName = REGIONS[region];
     
-    // Seed randomness slightly based on region
-    const rand = () => Math.random() * (region === 'global' ? 3 : 1);
-    
-    let today = Math.floor(rand() * 5);
-    let week = today + Math.floor(rand() * 15);
-    let month = week + Math.floor(rand() * 40);
+    let allMockBreaches = JSON.parse(localStorage.getItem('aquaAnalyticsBreaches'));
+    if (!allMockBreaches) {
+        allMockBreaches = [];
+        const types = ['pH', 'COD', 'BOD', 'TSS', 'Temperature', 'Toxic Contaminants'];
+        
+        Object.keys(REGIONS).forEach(regId => {
+            const rName = REGIONS[regId];
+            const subRegions = regId === 'global' ? Object.values(REGIONS).slice(1) : [rName];
+            for (let i = 0; i < 400; i++) {
+                allMockBreaches.push({
+                    regionId: regId,
+                    location: subRegions[Math.floor(Math.random() * subRegions.length)],
+                    isCritical: Math.random() > 0.5,
+                    type: types[Math.floor(Math.random() * types.length)],
+                    daysAgo: Math.floor(Math.random() * 3650)
+                });
+            }
+        });
+        localStorage.setItem('aquaAnalyticsBreaches', JSON.stringify(allMockBreaches));
+    }
 
-    document.getElementById('breach-count-day').innerText = `${today} Today`;
-    document.getElementById('breach-count-week').innerText = `${week} This Week`;
-    document.getElementById('breach-count-month').innerText = `${month} This Month`;
+    const diffDays = getSliceOffset();
+    const relevantBreaches = allMockBreaches.filter(b => 
+        b.regionId === region && 
+        b.daysAgo >= diffDays && 
+        b.daysAgo <= diffDays + 30
+    ).sort((a,b) => a.daysAgo - b.daysAgo);
 
-    if (month === 0) {
+    const todayCount = relevantBreaches.filter(b => b.daysAgo === diffDays).length;
+    const weekCount = relevantBreaches.filter(b => b.daysAgo >= diffDays && b.daysAgo <= diffDays + 7).length;
+    const monthCount = relevantBreaches.length;
+
+    document.getElementById('breach-count-day').innerText = `${todayCount} Today`;
+    document.getElementById('breach-count-week').innerText = `${weekCount} This Week`;
+    document.getElementById('breach-count-month').innerText = `${monthCount} This Month`;
+
+    if (monthCount === 0) {
         breachFeed.innerHTML = '<div class="empty-state">No historical breaches found for this period.</div>';
         return;
     }
 
-    const types = ['pH', 'COD', 'BOD', 'TSS', 'Temperature', 'Toxic Contaminants'];
-    const subRegions = region === 'global' ? Object.values(REGIONS).slice(1) : [regionName];
-
-    for (let i = 0; i < Math.min(month, 20); i++) { // show up to 20
-        const isCritical = Math.random() > 0.5;
-        const type = types[Math.floor(Math.random() * types.length)];
-        const loc = subRegions[Math.floor(Math.random() * subRegions.length)];
-        
-        // Random date within the month
-        const d = new Date(dateFilter.value);
-        d.setDate(d.getDate() - Math.floor(Math.random() * 30));
+    relevantBreaches.forEach(b => {
+        const d = new Date();
+        d.setDate(d.getDate() - b.daysAgo);
         const dateStr = d.toLocaleDateString();
 
         const html = `
-            <div class="alert-item ${isCritical ? 'critical' : 'warning'}">
-                <div class="alert-icon"><i data-lucide="${isCritical ? 'alert-octagon' : 'alert-triangle'}"></i></div>
+            <div class="alert-item ${b.isCritical ? 'critical' : 'warning'}">
+                <div class="alert-icon"><i data-lucide="${b.isCritical ? 'alert-octagon' : 'alert-triangle'}"></i></div>
                 <div class="alert-content">
-                    <p><strong>[${loc}]</strong> Limit violation detected for ${type}.</p>
-                    <span class="alert-time">Date: ${dateStr} - STATUS: ${isCritical ? 'CRITICAL' : 'WARNING'}</span>
+                    <p><strong>[${b.location}]</strong> Limit violation detected for ${b.type}.</p>
+                    <span class="alert-time">Date: ${dateStr} - STATUS: ${b.isCritical ? 'CRITICAL' : 'WARNING'}</span>
                 </div>
             </div>
         `;
         breachFeed.insertAdjacentHTML('beforeend', html);
-    }
-    if (lucide) lucide.createIcons();
+    });
+    if (window.lucide) window.lucide.createIcons();
 };
 
 const updateDashboard = () => {
     // Regenerate data
-    const weeklyData  = getDatasets(7);
+    const weeklyData  = getDatasets(7, 'day');
     const weeklyLabels = [...generateLabels(7, 'day'), 'Proj+1', 'Proj+2', 'Proj+3'];
     chartWeekly.data.labels   = weeklyLabels;
     chartWeekly.data.datasets = weeklyData;
     chartWeekly.update();
 
-    const monthlyData  = getDatasets(4);
+    const monthlyData  = getDatasets(4, 'week');
     const monthlyLabels = [...generateLabels(4, 'week'), 'Proj+1', 'Proj+2', 'Proj+3'];
     chartMonthly.data.labels   = monthlyLabels;
     chartMonthly.data.datasets = monthlyData;
     chartMonthly.update();
 
-    const yearlyData  = getDatasets(12);
+    const yearlyData  = getDatasets(12, 'month');
     const yearlyLabels = [...generateLabels(12, 'month'), 'Proj+1', 'Proj+2', 'Proj+3'];
     chartYearly.data.labels   = yearlyLabels;
     chartYearly.data.datasets = yearlyData;

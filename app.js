@@ -11,7 +11,7 @@ const CONFIG = {
 // Regions setup
 const createHistory = () => ({ labels: [], ph: [], cod: [], bod: [], tss: [], temp: [], toxic: [] });
 
-const REGIONS = [
+let REGIONS = JSON.parse(localStorage.getItem('aquaLiveRegions')) || [
     { id: 'eu',  name: 'EURO-MAIN',   shortName: 'EUR-1',  lat: 50.0,  lng: 10.0,   ph: 7.3, cod: 120, bod: 28, tss: 18, temp: 14, tempBase: 14, toxic: 1.5, breaches: 0, history: createHistory() },
     { id: 'na',  name: 'AMRN-MAIN',   shortName: 'AMN-1',  lat: 45.0,  lng: -100.0, ph: 7.2, cod: 110, bod: 25, tss: 15, temp: 18, tempBase: 18, toxic: 1.0, breaches: 0, history: createHistory() },
     { id: 'as',  name: 'APAC-MAIN',   shortName: 'APC-1',  lat: 35.0,  lng: 100.0,  ph: 7.4, cod: 130, bod: 30, tss: 20, temp: 26, tempBase: 26, toxic: 2.0, breaches: 0, history: createHistory() },
@@ -20,8 +20,8 @@ const REGIONS = [
     { id: 'oc',  name: 'PCFC-MAIN',   shortName: 'PCF-1',  lat: -25.0, lng: 135.0,  ph: 7.2, cod: 105, bod: 24, tss: 14, temp: 23, tempBase: 23, toxic: 0.9, breaches: 0, history: createHistory() }
 ];
 
-let globalHistory = createHistory();
-let breachCountTotal = 0;
+let globalHistory = JSON.parse(localStorage.getItem('aquaLiveGlobalHistory')) || createHistory();
+let breachCountTotal = parseInt(localStorage.getItem('aquaBreachCountTotal') || '0', 10);
 let mapMarkers = {};
 let map;
 
@@ -664,6 +664,11 @@ const generateData = () => {
         });
         generateLogSummary(r.name, sumsArr.join(', '), riskyCount);
     }
+
+    // Persist Live Dashboard State
+    localStorage.setItem('aquaLiveRegions', JSON.stringify(REGIONS));
+    localStorage.setItem('aquaLiveGlobalHistory', JSON.stringify(globalHistory));
+    localStorage.setItem('aquaBreachCountTotal', breachCountTotal.toString());
 };
 
 // ── Breach Report Enrichment Helpers ─────────────────────────────────────────
