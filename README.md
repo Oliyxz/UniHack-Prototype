@@ -28,11 +28,44 @@ This prototype is built using a robust, zero-build frontend stack for maximum po
 
 ## How to Run the Prototype
 
-Since this is a zero-build prototype, you do not need Node.js or any build tools to run it.
+Since this is a zero-build prototype, you do not need complex build tools to run it, but **a local web server is required** for the AI features to communicate with local APIs (due to browser CORS security policies).
 
-1. Clone or download this repository.
-2. Open the `index.html` file directly in any modern web browser.
-3. You will immediately see the dashboard populating with live simulated data.
+### 1. Start a Local Web Server
+
+Do not open the `index.html` file directly by double-clicking it (this causes `file:///` CORS errors). Instead, serve the directory locally:
+
+**Using Python:**
+```bash
+python -m http.server 8000
+```
+Then navigate to `http://localhost:8000` in your web browser.
+
+**Using Node.js:**
+```bash
+npx serve
+```
+Then navigate to `http://localhost:3000` in your web browser.
+
+### 2. Configure Local AI Engine (Ollama)
+
+For the AI Assistant and Analytics tools to function, you must allow cross-origin requests (CORS) from your local server to Ollama. 
+
+**If running Ollama from terminal/PowerShell (Windows):**
+```powershell
+$env:OLLAMA_ORIGINS="*"
+ollama serve
+```
+
+**If using the Ollama System Tray App (Windows):**
+1. Right-click the Ollama icon in the system tray and select **Quit**.
+2. Press the Windows key, search for **"Environment Variables"** and select **"Edit the system environment variables"**.
+3. Click the **"Environment Variables..."** button.
+4. Under **User variables**, click **New...**
+5. Enter Variable name: `OLLAMA_ORIGINS`
+6. Enter Variable value: `*`
+7. Click **OK** and restart the Ollama app from your start menu.
+
+After setting this up, navigate to the **Settings** page in the AquaSense dashboard and use the **Test Link** button to verify your connection!
 
 ## Exploring the AI Engine
 

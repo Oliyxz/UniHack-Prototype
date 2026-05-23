@@ -4,8 +4,9 @@
 (function () {
     'use strict';
 
-    const OLLAMA_URL = 'http://localhost:11434/api/chat';
-    const MODEL      = 'llama3';
+    const getOllamaUrl = () => (localStorage.getItem('aquaOllamaUrl') || 'http://localhost:11434').replace(/\/+$/, '') + '/api/chat';
+    const getOllamaTagsUrl = () => (localStorage.getItem('aquaOllamaUrl') || 'http://localhost:11434').replace(/\/+$/, '') + '/api/tags';
+    const getOllamaModel = () => localStorage.getItem('aquaOllamaModel') || 'llama3';
 
     let messages    = [];   // conversation history
     let isStreaming = false;
@@ -89,10 +90,10 @@ INSTRUCTIONS:
         ];
 
         try {
-            const res = await fetch(OLLAMA_URL, {
+            const res = await fetch(getOllamaUrl(), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ model: MODEL, messages: apiMessages, stream: true }),
+                body: JSON.stringify({ model: getOllamaModel(), messages: apiMessages, stream: true }),
             });
 
             if (!res.ok) throw new Error(`Ollama error ${res.status}`);
@@ -122,7 +123,7 @@ INSTRUCTIONS:
     // ── Ollama health check ────────────────────────────────────────────────────
     async function checkConnection() {
         try {
-            const res = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(3000) });
+            const res = await fetch(getOllamaTagsUrl(), { signal: AbortSignal.timeout(3000) });
             setStatus(res.ok ? 'online' : 'offline');
         } catch { setStatus('offline'); }
     }
@@ -131,7 +132,7 @@ INSTRUCTIONS:
         const el = document.getElementById('aqua-ai-sub');
         if (!el) return;
         el.innerHTML = state === 'online'
-            ? `<span class="aq-dot online"></span> llama3 · Ready`
+            ? `<span class="aq-dot online"></span> ${getOllamaModel()} · Ready`
             : `<span class="aq-dot offline"></span> Ollama Offline`;
     }
 
@@ -196,7 +197,7 @@ INSTRUCTIONS:
         <div class="aq-feed" id="aq-feed">
             <div class="aq-welcome">
                 <div class="aq-welcome-icon">✦</div>
-                <p>Hi! I'm your AquaSense AI assistant, powered by <strong>llama3</strong>. I have live access to all your sensor readings and compliance data.</p>
+                <p>Hi! I'm your AquaSense AI assistant, powered by <strong>${getOllamaModel()}</strong>. I have live access to all your sensor readings and compliance data.</p>
                 <p class="aq-welcome-hint">Ask me anything about your wastewater monitoring, breaches, or compliance.</p>
             </div>
             ${chipsHTML()}
@@ -208,7 +209,7 @@ INSTRUCTIONS:
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 </button>
             </div>
-            <div class="aq-powered">Powered by Ollama · llama3 · Running locally on your machine</div>
+            <div class="aq-powered">Powered by Ollama · ${getOllamaModel()} · Running locally on your machine</div>
         </div>`;
         document.body.appendChild(drawer);
 

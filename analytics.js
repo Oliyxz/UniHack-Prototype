@@ -285,12 +285,14 @@ const generateAISummary = () => {
     - Historical Breaches: ${breaches}
     
     Provide a concise, highly professional executive summary of these trends. Highlight the most critical information or potential risks by wrapping important keywords or metrics in HTML <strong> tags. Format your response as a single, well-structured paragraph suitable for a regulatory dashboard. Do NOT use markdown asterisks (*).`;
+    const ollamaBase = (localStorage.getItem('aquaOllamaUrl') || 'http://localhost:11434').replace(/\/+$/, '');
+    const ollamaModel = localStorage.getItem('aquaOllamaModel') || 'llama3';
     
-    fetch('http://localhost:11434/api/generate', {
+    fetch(`${ollamaBase}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            model: 'llama3',
+            model: ollamaModel,
             prompt: prompt,
             stream: false
         })

@@ -630,10 +630,13 @@ const generateData = () => {
 
         const prompt = `You are a wastewater AI monitor. Current region: ${regionName}. Recent averages: ${averages}. Risky parameters: ${riskyCount}. Write a concise 1-sentence prediction about potential breaches that could occur due to these ongoing factors. Use HTML <strong> tags to highlight critical variables or risks. Do not use asterisks.`;
         
-        fetch('http://localhost:11434/api/generate', {
+        const ollamaBase = (localStorage.getItem('aquaOllamaUrl') || 'http://localhost:11434').replace(/\/+$/, '');
+        const ollamaModel = localStorage.getItem('aquaOllamaModel') || 'llama3';
+        
+        fetch(`${ollamaBase}/api/generate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: 'llama3', prompt: prompt, stream: false })
+            body: JSON.stringify({ model: ollamaModel, prompt: prompt, stream: false })
         })
         .then(res => res.json())
         .then(data => {
@@ -1160,11 +1163,14 @@ function runSourceApportionment(breachedParam) {
     resultEl.innerHTML = `<span style="color:var(--status-critical);font-weight:600;">⚠ Analyzing with local LLM...</span><br>Awaiting Ollama response...`;
     
     // Call local Ollama LLM
-    fetch('http://localhost:11434/api/generate', {
+    const ollamaBase = (localStorage.getItem('aquaOllamaUrl') || 'http://localhost:11434').replace(/\/+$/, '');
+    const ollamaModel = localStorage.getItem('aquaOllamaModel') || 'llama3';
+    
+    fetch(`${ollamaBase}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            model: 'llama3',
+            model: ollamaModel,
             prompt: `You are an AI assistant for a wastewater monitoring dashboard. A spike in ${breachedParam.toUpperCase()} was detected. Upstream analysis points to ${node.name}. In 2 short sentences, explain why this node might cause this spike and recommend an immediate action. Do not use formatting like bold or asterisks.`,
             stream: false
         })

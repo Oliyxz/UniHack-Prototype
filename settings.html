@@ -101,7 +101,52 @@
                             <span class="slider"></span>
                         </label>
                     </div>
+
+                    <div class="section-title" style="margin-top: 30px; margin-bottom: 10px;">
+                        <h3>User Configuration</h3>
+                    </div>
                     
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Platform Role</h4>
+                            <p>Tailor AI system tone, compliance targets, and analysis depth.</p>
+                        </div>
+                        <select class="input-glass" id="role-select">
+                            <option value="operator">Operator (Technical details & thresholds)</option>
+                            <option value="executive">Executive (ROI & regulatory risk)</option>
+                            <option value="regulator">Regulator (Compliance & reporting)</option>
+                        </select>
+                    </div>
+
+                    <div class="section-title" style="margin-top: 30px; margin-bottom: 10px;">
+                        <h3>AI & Local LLM Settings</h3>
+                    </div>
+                    
+                    <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                        <div class="setting-info" style="width: 100%;">
+                            <h4>Ollama Server URL</h4>
+                            <p>Specify the URL of your local or remote Ollama instance.</p>
+                        </div>
+                        <input type="text" class="input-glass" id="ollama-url-input" placeholder="http://localhost:11434" style="width: 100%;">
+                    </div>
+                    
+                    <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                        <div class="setting-info" style="width: 100%;">
+                            <h4>Ollama Model Name</h4>
+                            <p>Specify the model to use for compliance summary predictions (e.g., llama3, llama2, mistral, phi3).</p>
+                        </div>
+                        <input type="text" class="input-glass" id="ollama-model-input" placeholder="llama3" style="width: 100%;">
+                    </div>
+                    
+                    <div class="setting-row" style="align-items: center; justify-content: space-between; border-bottom: none;">
+                        <div class="setting-info">
+                            <h4>Ollama Server Connection</h4>
+                            <p>Test the connection to your specified Ollama server.</p>
+                        </div>
+                        <button class="btn btn-outline" id="test-ollama-btn" style="min-width: 120px;">Test Link</button>
+                    </div>
+                    
+                    <div id="ollama-test-status" style="margin-top: 10px; font-size: 13px; display: none; padding: 14px; border-radius: 8px; line-height: 1.6; border: 1px solid var(--border-glass);"></div>
                 </div>
             </div>
         </main>
