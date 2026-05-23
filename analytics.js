@@ -358,6 +358,15 @@ const generateAISummary = () => {
     const ollamaBase = (localStorage.getItem('aquaOllamaUrl') || 'http://localhost:11434').replace(/\/+$/, '');
     const ollamaModel = localStorage.getItem('aquaOllamaModel') || 'llama3';
     
+    const formatAIResponse = (text) => {
+        let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        Object.keys(CONFIG).forEach(key => {
+            const regex = new RegExp(`\\b${CONFIG[key].label}\\b`, 'gi');
+            formatted = formatted.replace(regex, `<span style="color:${CONFIG[key].color}; font-weight:600;">$&</span>`);
+        });
+        return formatted;
+    };
+
     fetch(`${ollamaBase}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -369,7 +378,7 @@ const generateAISummary = () => {
     })
     .then(res => res.json())
     .then(data => {
-        summaryContent.innerHTML = `<span style="color:var(--text-primary);"><strong>AI Insight:</strong></span> ${data.response}`;
+        summaryContent.innerHTML = `<span style="color:var(--text-primary);"><strong>AI Insight:</strong></span> ${formatAIResponse(data.response)}`;
     })
     .catch(err => {
         console.error("Ollama fetch failed:", err);
